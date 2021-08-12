@@ -36,6 +36,44 @@ Error logs contain the logs of each camera:
 
 The only implemented error during the hackathon was the SD error, but the log could be useful for plenty of other situations, from each error that can occur to a "powerbank should be charged" warnings.
 
+### The api
+
+#### GET `/version`
+
+Returns the version of the server
+
+#### GET `/machines`
+
+Returns all the avalable machines (cameras). They are all the cameras that ever connected to the server.
+
+#### GET `/machines/:id`
+
+Returns the configurations of the machine (camera) with that id and returns also the current time.
+If the query param `?initialConnection=1` is provided, the server knows that this is the first connection that the camera does after having been turned on. This is because if `lastModified` is before `lastPinged`, the server knows that the configurations in the camera are updated and returns `null` instead of the configurations, but if the camera is turned off and then on, the camera needs in any case to get the configurations.
+
+#### GET `/machines/:id/errors`
+
+Returns all the errors of the machine with that id.
+
+#### GET `/machines/:id/frontend`
+
+Returns the config of the machine with that id, by knowing that the request is done by the frontend (for instance `lastPinged` is not updated).
+
+#### POST `/machines/:id`
+
+Updates the configs of the machine with that id
+
+#### POST `/machines/:id/errors`
+
+Adds an error to the database of the machine with that id.
+
+#### POST `/machines/:id/image`
+
+Uploads an image to the server, in the folder of the machine with that id
+
+#### GET `/machines/:id/images`
+
+Returns all the paths to the statically served images of the machine with that id
 
 ### The flow
 
