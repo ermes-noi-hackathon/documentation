@@ -75,16 +75,42 @@ Uploads an image to the server, in the folder of the machine with that id
 
 Returns all the paths to the statically served images of the machine with that id
 
+Note: the body and returns of the request should be inferred by the code, because are not written in the documentation.
+
 ### The flow
 
 Generally, the system was supposed to work like this:
 1. A camera is turned on for the first time
 2. The first thing it does is connecting to the server, by using its MAC address as unique id
-3. The API call gets the current time and the default configurations. A document with the default configurations associated to the id is inserted in MongoDB.
-4. 
+3. The API call gets the current time and the default configurations, by using `initialConnection=1`. A document with the default configurations associated to the id is inserted in MongoDB
+4. The server starts a scheduler to check `lastPing` of this camera, which is updated on each config request. This is because if the server is not pinged from too much time, it sends an email alert to the owner
+5. The camera uses the current time and the configurations to schedule the next time it takes a photo. It will blink with the led to make the owner know that everything worked properly.
+6. The camera schedules also a periodical "ping" to the server, that makes the server know that the camera is working and that retrieves updated current time and configs
+7. When the camera takes a photo, tries to upload it to the server. If it is not connected, saves it to the SD card as a fallback. The next time it will manage to upload the photo to the server, also the images in the SD will be uploaded. If backup is true, it will save the photo nonetheless and, if the SD is not connected, it will send an error to the server, that will be saved in the database error logs.
+8. If a ping retrieves a non-null configs (it means that the configurations are changed), the camera will re-schedule the photo scheduler with those configs.
+9. A user, with the frontend, can change the configs or see photos/error logs
+10. Each time there is an error, it is sent to the server to be logged and notify the owner
 
 ## Possible applications
 
-The cameras are not expansive and many of them could be bought without a huge amount of money. They require also not much power (this was also a requirement), so a normal powerbank could maintain them for weeks.
+The cameras are not expansive and many of them could be bought without a huge amount of money. They require also not much power (this was also a requirement), so a normal powerbank could maintain them for weeks. The camera uses the deep sleep schedule in order to save energy.
 
 The application that was suggested by the ideators of the challenge was taking periodically photos in agricultural fields, sending them to a server. In the server the images are then analyzed so that various important information can entail a better management of that field.
+
+## Notes on the implementation
+
+There was no time to implement all the features, so a part of them were not implemented:
+- The frontend was with a Vuetify quite good graphic but could be improved
+- The server did not have the schedule to check the lastPinged and send a notification if a machine were not working. The null config if lastPinged > lastModified was missing, too
+- The arduino code that followed the "hours" property was developed, but for presentation purpose it did not follow it and updated an image every 50 seconds
+- In the arduino, there were not the queues to delete the oldest images if the SD was empty
+- In the arduino, the pause and backup properties were not taken in consideration
+- In the arduino code, only the SD error was handled by sending the log to the server
+- A docker-compose file could be done to deploy everything quickly
+
+
+## Members of the group
+
+* __Eugenio Berretta__: Developed the database/server/frontend part and designed the general flow
+* __Sebastian Caveda__: Implemented the arduino code
+* __Michael Plotegher__: Helped with the idea, made the powerpoint and, overall, did the presentaion
